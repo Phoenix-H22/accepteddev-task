@@ -1,0 +1,11 @@
+{
+  "client_id": "YOUR_ZOHO_CLIENT_ID",
+  "client_secret": "YOUR_ZOHO_CLIENT_SECRET",
+  "refresh_token": "YOUR_ZOHO_REFRESH_TOKEN",
+  "accounts_url": "https://accounts.zoho.com",
+  "api_domain": "https://www.zohoapis.com",
+  "crm_modules": {
+    "contact": "Contacts",
+    "deal": "Deals"
+  }
+}

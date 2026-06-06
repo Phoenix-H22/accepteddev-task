@@ -1,0 +1,95 @@
+// Zoho CRM scheduled function: sync new WooCommerce orders to Contacts + Deals.
+// Paste into: Zoho CRM → Setup → Developer Space → Functions → Create Function
+// Schedule: every 5-15 minutes (or run manually while testing).
+//
+// BEFORE RUNNING:
+// 1) Expose your local store with ngrok: ngrok http accepteddevtask.local:10005
+//    (use the HTTPS forwarding URL from ngrok, e.g. https://abc123.ngrok-free.app)
+// 2) Replace WOO_BASE_URL, CONSUMER_KEY, CONSUMER_SECRET below.
+// 3) Run once manually, then verify Contacts and Deals in Zoho CRM.
+
+WOO_BASE_URL = "https://YOUR-NGROK-SUBDOMAIN.ngrok-free.app/wp-json/wc/v3";
+CONSUMER_KEY = "ck_YOUR_KEY";
+CONSUMER_SECRET = "cs_YOUR_SECRET";
+
+ordersUrl = WOO_BASE_URL + "/orders?status=processing&per_page=20&consumer_key=" + CONSUMER_KEY + "&consumer_secret=" + CONSUMER_SECRET;
+
+ordersResponse = invokeurl
+[
+	url: ordersUrl
+	type: GET
+	connection: ""
+];
+
+if(ordersResponse.isNull())
+{
+	info "No response from WooCommerce. Check ngrok URL and API keys.";
+	return;
+}
+
+synced = 0;
+
+for each order in ordersResponse
+{
+	orderId = order.get("id");
+	email = order.get("billing").get("email");
+	firstName = order.get("billing").get("first_name");
+	lastName = order.get("billing").get("last_name");
+	total = order.get("total");
+	currency = order.get("currency");
+
+	if(email.isNull() || email == "")
+	{
+		info "Skipping order " + orderId + " — missing email.";
+		continue;
+	}
+
+	// --- Contact: search by email, create if missing ---
+	contactId = null;
+	searchCriteria = "(Email:equals:" + email + ")";
+	searchResp = zoho.crm.searchRecords("Contacts", searchCriteria);
+
+	if(searchResp.size() > 0)
+	{
+		contactId = searchResp.get(0).get("id");
+		info "Found existing contact for " + email + " (#" + contactId + ")";
+	}
+	else
+	{
+		contactMap = Map();
+		contactMap.put("First_Name", ifnull(firstName, "Customer"));
+		contactMap.put("Last_Name", ifnull(lastName, "Order"));
+		contactMap.put("Email", email);
+		contactMap.put("Phone", order.get("billing").get("phone"));
+		contactMap.put("Mailing_Street", order.get("billing").get("address_1"));
+		contactMap.put("Mailing_City", order.get("billing").get("city"));
+		contactMap.put("Mailing_Country", order.get("billing").get("country"));
+
+		createContact = zoho.crm.createRecord("Contacts", contactMap);
+		contactId = createContact.get("id");
+		info "Created contact #" + contactId + " for " + email;
+	}
+
+	// --- Deal: create one per order ---
+	lineItems = order.get("line_items");
+	productNames = List();
+	for each item in lineItems
+	{
+		productNames.add(item.get("name") + " x" + item.get("quantity"));
+	}
+
+	dealMap = Map();
+	dealMap.put("Deal_Name", "WooCommerce Order #" + orderId);
+	dealMap.put("Amount", total.toDecimal());
+	dealMap.put("Stage", "Qualification");
+	dealMap.put("Closing_Date", zoho.currentdate.addDay(7));
+	dealMap.put("Contact_Name", contactId);
+	dealMap.put("Description", "Products: " + productNames.toString() + " | Currency: " + currency);
+
+	createDeal = zoho.crm.createRecord("Deals", dealMap);
+	info "Created deal #" + createDeal.get("id") + " for order #" + orderId;
+
+	synced = synced + 1;
+}
+
+info "Sync finished. Orders processed: " + synced;
