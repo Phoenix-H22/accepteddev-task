@@ -1,0 +1,12 @@
+# Local secrets — do not commit
+integration/woocommerce-api.local.json
+integration/zoho.local.json
+integration/.sync-state.json
+
+# LocalWP logs
+logs/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
