@@ -1,4 +1,4 @@
-string standalone.sync_woocommerce_orders()
+void schedule.sync_woocommerce_orders()
 {
 	WOO_BASE_URL = "https://accepted.phoenixtechs.tech/wp-json/wc/v3";
 	CONSUMER_KEY = "ck_YOUR_WC_KEY";
@@ -21,8 +21,8 @@ string standalone.sync_woocommerce_orders()
 	];
 	if(tokenResp == null || !tokenResp.containKey("access_token"))
 	{
-		info "Zoho OAuth failed: " + tokenResp;
-		return "Failed: Zoho OAuth token refresh";
+		info "Failed: Zoho OAuth token refresh: " + tokenResp;
+		return;
 	}
 	crmHeaders = Map();
 	crmHeaders.put("Authorization", "Zoho-oauthtoken " + tokenResp.get("access_token"));
@@ -34,15 +34,15 @@ string standalone.sync_woocommerce_orders()
 	];
 	if(ordersResponse == null)
 	{
-		info "No response from WooCommerce.";
-		return "Failed: no WooCommerce response";
+		info "Failed: no WooCommerce response";
+		return;
 	}
 	try
 	{
 		if(ordersResponse.containKey("code"))
 		{
-			info "WooCommerce API error: " + ordersResponse;
-			return "Failed: WooCommerce API error";
+			info "Failed: WooCommerce API error: " + ordersResponse;
+			return;
 		}
 	}
 	catch(e)
@@ -163,5 +163,5 @@ string standalone.sync_woocommerce_orders()
 		info "Created deal #" + createDealResp.get("data").get(0).get("details").get("id") + " for order #" + orderId;
 		synced = synced + 1;
 	}
-	return "Sync finished. Created: " + synced + ", Skipped (already synced): " + skipped;
+	info "Sync finished. Created: " + synced + ", Skipped (already synced): " + skipped;
 }

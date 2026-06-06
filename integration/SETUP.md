@@ -53,17 +53,22 @@ Paste that URL into the Deluge script (`WOO_BASE_URL`).
 
 Also copy **Consumer Key** and **Consumer Secret** from `integration/woocommerce-api.local.json`.
 
-### 2) Zoho CRM OAuth (required)
+### 2) Zoho CRM OAuth2 (required)
 
-1. Go to [Zoho API Console](https://api-console.zoho.com/)
-2. Create a **Server-based Application** (or Self Client for testing)
-3. Add redirect URI (Zoho docs) and scopes:
+The Deluge script uses **OAuth2 refresh token → access token → CRM API v8**.
+
+Full steps: **`integration/OAUTH-SETUP.md`**
+
+Quick summary:
+
+1. [Zoho API Console](https://api-console.zoho.com/) — create Server-based client → **Client ID** + **Client Secret**
+2. **Self Client** → Generate Code with scopes:
    - `ZohoCRM.modules.contacts.ALL`
    - `ZohoCRM.modules.deals.ALL`
-4. Generate **Client ID**, **Client Secret**, and **Refresh Token**
-5. Copy `integration/zoho.local.json.example` → `integration/zoho.local.json` and fill values
-
-> For the Deluge approach in this task, OAuth is handled inside Zoho CRM when you create the function — you mainly need the WooCommerce URL + API keys in the script.
+3. Exchange code for **Refresh Token** (curl command in OAUTH-SETUP.md)
+4. Paste into Deluge script:
+   - `ZOHO_CLIENT_ID`, `ZOHO_CLIENT_SECRET`, `ZOHO_REFRESH_TOKEN`
+5. Optional local test: `php scripts/test-zoho-oauth.php` (uses `integration/zoho.local.json`)
 
 ### 3) Create the Deluge function in Zoho CRM (required — main deliverable)
 
