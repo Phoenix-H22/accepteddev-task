@@ -7,6 +7,9 @@ integration/.sync-state.json
 logs/
 *.log
 
+# Archives / accidental exports
+*.zip
+
 # OS / editor
 .DS_Store
 Thumbs.db
